@@ -36,20 +36,20 @@ public class SecureKeyStore extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 
         if (action.equals("set")) {
-            String alias = args.getString(0);
-            String input = args.getString(1);
+            String alias = args.getString(1);
+            String input = args.getString(2);
             this.encrypt(alias, input, callbackContext);
             return true;
         }
 
         if (action.equals("get")) {
-            String alias = args.getString(0);
+            String alias = args.getString(1);
             this.decrypt(alias, callbackContext);
             return true;
         }
 
         if (action.equals("remove")) {
-            String alias = args.getString(0);
+            String alias = args.getString(1);
             this.removeKeyFile(alias, callbackContext);
             return true;
         }

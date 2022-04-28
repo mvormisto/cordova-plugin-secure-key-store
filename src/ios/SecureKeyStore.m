@@ -22,10 +22,10 @@
 
 @implementation SecureKeyStore
 
-- (void) writeToSecureKeyStore:(NSMutableDictionary*) dict
+- (void) writeToSecureKeyStore:(NSMutableDictionary*) dict service:(NSString *) service
 {
     // get keychain
-    KeychainItemWrapper * keychain = [[KeychainItemWrapper alloc] initWithIdentifier:@"cordova.plugins.SecureKeyStore" accessGroup:nil];
+    KeychainItemWrapper * keychain = [[KeychainItemWrapper alloc] initWithIdentifier:@"cordova.plugins.SecureKeyStore" service:service accessGroup:nil];
     NSString *error;
     // Serialize dictionary and store in keychain
     NSData *serializedDict = [NSPropertyListSerialization dataFromPropertyList:dict format:NSPropertyListXMLFormat_v1_0 errorDescription:&error];
@@ -35,11 +35,11 @@
     }
 }
 
-- (NSMutableDictionary *) readFromSecureKeyStore
+- (NSMutableDictionary *) readFromSecureKeyStore:(NSString *) service
 {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
     // get keychain
-    KeychainItemWrapper * keychain = [[KeychainItemWrapper alloc] initWithIdentifier:@"cordova.plugins.SecureKeyStore" accessGroup:nil];
+    KeychainItemWrapper * keychain = [[KeychainItemWrapper alloc] initWithIdentifier:@"cordova.plugins.SecureKeyStore" service:service accessGroup:nil];
     NSError *error;
     @try
     {
@@ -60,14 +60,14 @@
     return [dict mutableCopy];
 }
 
-- (BOOL) removeKeyFromSecureKeyStore:(NSString*) key
+- (BOOL) removeKeyFromSecureKeyStore:(NSString*) key service:(NSString *) service
 {
     @try
     {
         // get mutable dictionary and remove key from store
-        NSMutableDictionary *dict = [self readFromSecureKeyStore];
+        NSMutableDictionary *dict = [self readFromSecureKeyStore:service];
         [dict removeObjectForKey:key];
-        [self writeToSecureKeyStore:dict];
+        [self writeToSecureKeyStore:dict service:service];
         return YES;
     }
     @catch (NSException * exception)
@@ -77,15 +77,15 @@
     }
 }
 
-- (void) resetSecureKeyStore
+- (void) resetSecureKeyStore:(NSString *) service
 {
-    [[[KeychainItemWrapper alloc] initWithIdentifier:@"cordova.plugins.SecureKeyStore" accessGroup:nil] resetKeychainItem];
+    [[[KeychainItemWrapper alloc] initWithIdentifier:@"cordova.plugins.SecureKeyStore" service:service accessGroup:nil] resetKeychainItem];
 }
 
-- (void)handleAppUninstallation
+- (void)handleAppUninstallation:(NSString *) service
 {
     if (![[NSUserDefaults standardUserDefaults] boolForKey:@"RnSksIsAppInstalled"]) {
-        [self resetSecureKeyStore];
+        [self resetSecureKeyStore: service];
         [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"RnSksIsAppInstalled"];
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
@@ -94,19 +94,20 @@
 - (void) set:(CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    NSString* key = [command.arguments objectAtIndex:0];
-    NSString* value = [command.arguments objectAtIndex:1];
+    NSString* service = [command.arguments objectAtIndex:0];
+    NSString* key = [command.arguments objectAtIndex:1];
+    NSString* value = [command.arguments objectAtIndex:2];
 
     @try {
         // handle app uninstallation
-        [self handleAppUninstallation];
+        [self handleAppUninstallation:service];
         // get mutable dictionary and store data
         [self.commandDelegate runInBackground:^{
             @synchronized(self) {
                 @try {
-                    NSMutableDictionary *dict = [self readFromSecureKeyStore];
+                    NSMutableDictionary *dict = [self readFromSecureKeyStore:service];
                     [dict setValue: value forKey: key];
-                    [self writeToSecureKeyStore:dict];
+                    [self writeToSecureKeyStore:dict service:service];
 
                     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"key saved successfully"];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -131,15 +132,16 @@
 - (void) get:(CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    NSString* key = [command.arguments objectAtIndex:0];
+    NSString* service = [command.arguments objectAtIndex:0];
+    NSString* key = [command.arguments objectAtIndex:1];
 
     @try {
         // handle app uninstallation
-        [self handleAppUninstallation];
+        [self handleAppUninstallation:service];
         [self.commandDelegate runInBackground:^{
             @synchronized(self) {
                 // get mutable dictionaly and retrieve store data
-                NSMutableDictionary *dict = [self readFromSecureKeyStore];
+                NSMutableDictionary *dict = [self readFromSecureKeyStore:service];
                 NSString *value = nil;
 
                 if (dict != nil) {
@@ -151,7 +153,7 @@
                     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:value];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
                 } else {
-                    NSString* errorMessage = @"{\"code\":1,\"message\":\"key does not present\"}";
+                    NSString* errorMessage = @"{\"code\":1,\"message\":\"key does not exist\"}";
                     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
                 }
@@ -160,7 +162,7 @@
     }
     @catch (NSException* exception)
     {
-        NSString* errorMessage = [NSString stringWithFormat:@"{\"code\":1,\"message\":\"key does not present\",\"actual-error\":%@}", exception];
+        NSString* errorMessage = [NSString stringWithFormat:@"{\"code\":1,\"message\":\"key does not exist\",\"actual-error\":%@}", exception];
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
@@ -169,13 +171,14 @@
 - (void) remove:(CDVInvokedUrlCommand*)command
 {
     CDVPluginResult* pluginResult = nil;
-    NSString* key = (NSString*)[command.arguments objectAtIndex:0];
+    NSString* service = [command.arguments objectAtIndex:0];
+    NSString* key = [command.arguments objectAtIndex:1];
     @try {
         // handle app uninstallation
-        [self handleAppUninstallation];
+        [self handleAppUninstallation:service];
         [self.commandDelegate runInBackground:^{
             @synchronized(self) {
-                BOOL status = [self removeKeyFromSecureKeyStore:key];
+                BOOL status = [self removeKeyFromSecureKeyStore:key service:service];
                 if (status) {
                     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Key removed successfully"];
                     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];

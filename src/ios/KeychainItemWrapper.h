@@ -57,7 +57,7 @@ CF/NS container objects.
 @interface KeychainItemWrapper : NSObject
 
 // Designated initializer.
-- (id)initWithIdentifier : (NSString *)identifier accessGroup : (NSString *)accessGroup;
+- (id)initWithIdentifier: (NSString *)identifier service: (NSString *)service accessGroup: (NSString *)accessGroup;
 -(void)setObject:(id)inObject forKey : (id)key;
 -(id)objectForKey:(id)key;
 

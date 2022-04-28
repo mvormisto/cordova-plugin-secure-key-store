@@ -4,16 +4,16 @@ var exec = require('cordova/exec');
 var SecureKeyStore = {
 	serviceName: "SecureKeyStore",
 
-	set: function(success, error, key, value) {
-		exec(success, error, this.serviceName, "set", [key, value]);
+	get: function (service, key) {
+		return new Promise((resolve) => exec(resolve, (error => resolve()), this.serviceName, "get", [service, key]));
 	},
 
-	get: function(success, error, key) {
-		exec(success, error, this.serviceName, "get", [key]);
+	set: function(service, key, value) {
+		return new Promise((resolve, reject) => exec(() => resolve(), reject, this.serviceName, "set", [service, key, value]));
 	},
 
-	remove: function(success, error, key) {
-		exec(success, error, this.serviceName, "remove", [key]);
+	remove: function (service, key) {
+		return new Promise((resolve) => exec(() => resolve(true), () => resolve(false), this.serviceName, "remove", [service, key]));
 	}
 };
 

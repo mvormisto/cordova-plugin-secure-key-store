@@ -92,7 +92,7 @@ Keychain API expects as a validly constructed container class.
     NSMutableDictionary *genericPasswordQuery;	// A placeholder for the generic keychain item query used to locate the item.
 }
 
-- (id)initWithIdentifier: (NSString *)identifier accessGroup:(NSString *) accessGroup;
+- (id)initWithIdentifier: (NSString *)identifier service:(NSString *) service accessGroup:(NSString *) accessGroup;
 {
     if (self = [super init])
     {
@@ -103,6 +103,7 @@ Keychain API expects as a validly constructed container class.
         
 		[genericPasswordQuery setObject:(__bridge id)kSecClassGenericPassword forKey:(__bridge id)kSecClass];
         [genericPasswordQuery setObject:identifier forKey:(__bridge id)kSecAttrGeneric];
+        [genericPasswordQuery setObject:service forKey:(__bridge id)kSecAttrService];
 		
 		// The keychain access group attribute determines if this item can be shared
 		// amongst multiple apps whose code signing entitlements contain the same keychain access group.
@@ -137,6 +138,7 @@ Keychain API expects as a validly constructed container class.
 			
 			// Add the generic attribute and the keychain access group.
 			[keychainItemData setObject:identifier forKey:(__bridge id)kSecAttrGeneric];
+            [keychainItemData setObject:service forKey:(__bridge id)kSecAttrService];
 			if (accessGroup != nil)
 			{
 #if TARGET_IPHONE_SIMULATOR
