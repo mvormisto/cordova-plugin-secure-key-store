@@ -184,9 +184,10 @@ Keychain API expects as a validly constructed container class.
 
 - (void)resetKeychainItem
 {
-    if (!keychainItemData) 
+    if (!keychainItemData)
     {
         keychainItemData = [[NSMutableDictionary alloc] init];
+        [keychainItemData setObject:(__bridge id)kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly forKey:(__bridge id)kSecAttrAccessible];
     }
     else if (keychainItemData)
     {
