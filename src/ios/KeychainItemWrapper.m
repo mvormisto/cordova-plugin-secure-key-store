@@ -195,8 +195,8 @@ Keychain API expects as a validly constructed container class.
 #ifndef NS_BLOCK_ASSERTIONS
 		OSStatus junk = 
 #endif
-	NSLog(@"Test Print");
-	SecItemDelete((__bridge CFDictionaryRef)tempDictionary);
+			NSLog(@"Test Print");
+			SecItemDelete((__bridge CFDictionaryRef)tempDictionary);
         NSAssert( junk == noErr || junk == errSecItemNotFound, @"Problem deleting current dictionary." );
     }
     
